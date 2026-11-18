@@ -1,0 +1,75 @@
+#!/bin/sh
+# Application-menu launcher for snippy, installed by install.sh beside the
+# snippy and snippy-gui binaries.
+#
+#   snippy-launch [manager|picker|save]   start the daemon if needed, then run the command
+#   snippy-launch lock                    lock a running daemon; does nothing otherwise
+#
+# Clicking the menu entry is an explicit request to use snippy, so this wrapper
+# may start the daemon. It starts locked, exactly like `snippy daemon`. The
+# snippy CLI commands themselves still never start a daemon.
+set -u
+
+dir=$(dirname "$(readlink -f "$0")")
+cli=$dir/snippy
+action=${1:-manager}
+
+fail() {
+    echo "snippy: $1" >&2
+    if command -v notify-send >/dev/null 2>&1; then
+        notify-send --icon=snippy --app-name=Snippy "Snippy" "$1" >/dev/null 2>&1 || true
+    fi
+    exit 1
+}
+
+case $action in
+    manager | picker | save) ;;
+    lock)
+        "$cli" status >/dev/null 2>&1 || exit 0
+        exec "$cli" lock
+        ;;
+    *)
+        echo "usage: snippy-launch [manager|picker|save|lock]" >&2
+        exit 2
+        ;;
+esac
+
+[ -x "$cli" ] || fail "the snippy program is missing next to this launcher; rerun install.sh."
+
+if ! "$cli" status >/dev/null 2>&1; then
+    # The daemon's diagnostics are fixed, content-free messages. Keep only the
+    # first line for a failed start, in a private temporary file.
+    log=$(mktemp) || fail "could not create a temporary file."
+    # setsid detaches the daemon from this launcher and any terminal.
+    setsid "$cli" daemon </dev/null >/dev/null 2>"$log" &
+    pid=$!
+    ready=
+    tries=0
+    while [ "$tries" -lt 100 ]; do
+        if "$cli" status >/dev/null 2>&1; then
+            ready=1
+            break
+        fi
+        kill -0 "$pid" 2>/dev/null || break
+        sleep 0.1
+        tries=$((tries + 1))
+    done
+    if [ -z "$ready" ] && "$cli" status >/dev/null 2>&1; then
+        ready=1
+    fi
+    reason=$(head -n 1 "$log" 2>/dev/null)
+    reason=${reason#snippy: }
+    rm -f "$log"
+    [ -n "$ready" ] || fail "the background service could not start${reason:+: $reason}"
+fi
+
+if [ "$action" = save ]; then
+    # Success is reported by the daemon (optionally as a notification) and in
+    # the window; surface failures, which would otherwise be invisible.
+    if ! result=$("$cli" save 2>&1); then
+        result=${result#snippy: }
+        fail "${result:-Save failed.}"
+    fi
+    exit 0
+fi
+exec "$cli" "$action"

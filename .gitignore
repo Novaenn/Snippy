@@ -1,0 +1,9 @@
+/target/
+/.cache/
+/AGENTS.md
+__pycache__/
+*.py[cod]
+*.db
+*.db-journal
+*.db-shm
+*.db-wal

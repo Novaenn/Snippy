@@ -1,0 +1,22 @@
+[package]
+name = "snippy-gui"
+description = "On-demand GTK presentation for snippy"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+gtk.workspace = true
+snippy-core.workspace = true
+snippy = { path = "../snippy" }
+zeroize.workspace = true
+futures-channel.workspace = true
+futures-util.workspace = true
+
+[dev-dependencies]
+clap.workspace = true
+
+[lints]
+workspace = true
+

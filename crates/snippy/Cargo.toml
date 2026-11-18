@@ -1,0 +1,34 @@
+[package]
+name = "snippy"
+description = "Explicit-save clipboard manager for Linux X11"
+default-run = "snippy"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[features]
+default = ["sqlcipher"]
+sqlcipher = ["rusqlite/bundled-sqlcipher"]
+# Verification build only: storage must refuse to run with this engine.
+plaintext-test-build = ["rusqlite/bundled"]
+
+[dependencies]
+clap.workspace = true
+snippy-core.workspace = true
+x11rb.workspace = true
+rusqlite.workspace = true
+blake3.workspace = true
+png.workspace = true
+zeroize.workspace = true
+rustix.workspace = true
+signal-hook.workspace = true
+
+[dev-dependencies]
+x11rb = { workspace = true, features = ["xtest"] }
+tempfile.workspace = true
+rpassword.workspace = true
+
+[lints]
+workspace = true
+

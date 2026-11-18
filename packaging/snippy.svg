@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- snippy application icon: a friendly clipboard mascot with a padlock,
+     representing explicit, encrypted saves. Flat colors only, so every SVG
+     renderer draws it identically. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <!-- Background tile -->
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="#2a64a3"/>
+
+  <!-- Clipboard body -->
+  <rect x="25" y="21" width="78" height="91" rx="15" fill="#dfe7f1"/>
+  <rect x="33" y="31" width="62" height="73" rx="9" fill="#ffffff"/>
+
+  <!-- Gold clip -->
+  <rect x="54" y="11" width="20" height="13" rx="5" fill="none" stroke="#e0a42c" stroke-width="5"/>
+  <rect x="45" y="18" width="38" height="15" rx="6" fill="#e0a42c"/>
+
+  <!-- Face -->
+  <ellipse cx="51" cy="59" rx="4.8" ry="5.8" fill="#243447"/>
+  <ellipse cx="77" cy="59" rx="4.8" ry="5.8" fill="#243447"/>
+  <circle cx="52.6" cy="57" r="1.6" fill="#ffffff"/>
+  <circle cx="78.6" cy="57" r="1.6" fill="#ffffff"/>
+  <ellipse cx="43" cy="70" rx="6.2" ry="4" fill="#f4a6a6"/>
+  <ellipse cx="85" cy="70" rx="6.2" ry="4" fill="#f4a6a6"/>
+  <path d="M56 70 Q64 79 72 70" fill="none" stroke="#243447" stroke-width="3.6" stroke-linecap="round"/>
+
+  <!-- Saved note lines -->
+  <rect x="42" y="86" width="44" height="5" rx="2.5" fill="#9fb2c8"/>
+  <rect x="42" y="97" width="30" height="5" rx="2.5" fill="#9fb2c8"/>
+
+  <!-- Padlock badge -->
+  <circle cx="98" cy="98" r="24" fill="#2a64a3"/>
+  <path d="M89 94 v-7 a9 9 0 0 1 18 0 v7" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round"/>
+  <rect x="83" y="93" width="30" height="23" rx="6" fill="#2fa86b"/>
+  <circle cx="98" cy="102" r="3.2" fill="#ffffff"/>
+  <rect x="96.5" y="103" width="3" height="7" rx="1.5" fill="#ffffff"/>
+</svg>
