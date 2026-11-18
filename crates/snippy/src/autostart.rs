@@ -50,21 +50,16 @@ impl Autostart {
             self.ensure_replaceable()?;
             self.write(&self.render(executable)?)
         } else {
-            if !directory.exists() {
-                return Ok(());
-            }
-            self.ensure_directory(directory)?;
+            // Disabling only ever removes an entry this application wrote. When
+            // no such entry exists, leave the shared XDG directory alone: its
+            // permissions are unrelated to settings that merely pass through
+            // the autostart transaction, so they must not block them.
             match fs::symlink_metadata(&self.path) {
                 Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
                 Err(_) => Err(Error::Autostart),
-                Ok(metadata) => {
-                    if metadata.file_type().is_symlink()
-                        || !metadata.is_file()
-                        || metadata.uid() != rustix::process::geteuid().as_raw()
-                    {
-                        return Err(Error::UnsafePath);
-                    }
-                    self.ensure_ours()?;
+                Ok(_) => {
+                    self.ensure_directory(directory)?;
+                    self.ensure_replaceable()?;
                     fs::remove_file(&self.path).map_err(|_| Error::Autostart)
                 }
             }
@@ -87,7 +82,7 @@ impl Autostart {
             || metadata.uid() != rustix::process::geteuid().as_raw()
             || metadata.mode() & 0o022 != 0
         {
-            return Err(Error::UnsafePath);
+            return Err(Error::Autostart);
         }
         Ok(())
     }
@@ -101,7 +96,7 @@ impl Autostart {
                     || !metadata.is_file()
                     || metadata.uid() != rustix::process::geteuid().as_raw()
                 {
-                    return Err(Error::UnsafePath);
+                    return Err(Error::Autostart);
                 }
                 self.ensure_ours()
             }
@@ -230,7 +225,38 @@ mod tests {
 
         fs::remove_file(&file).unwrap();
         std::os::unix::fs::symlink("/tmp/foreign", &file).unwrap();
-        assert_eq!(autostart.set(false, executable), Err(Error::UnsafePath));
+        assert_eq!(autostart.set(false, executable), Err(Error::Autostart));
+    }
+
+    #[test]
+    fn disable_without_our_entry_ignores_unrelated_directory_permissions() {
+        let temp = tempfile::tempdir().unwrap();
+        let directory = temp.path().join("autostart");
+        let file = directory.join("snippy.desktop");
+        let autostart = Autostart::at(&file);
+        let executable = Path::new("/opt/snippy");
+
+        // Disabling with nothing to remove neither creates nor validates the
+        // shared XDG autostart directory.
+        autostart.set(false, executable).unwrap();
+        assert!(!directory.exists());
+
+        // A stock Ubuntu directory (umask 002, mode 0775) holding someone
+        // else's entry must still allow an unrelated disable to succeed.
+        fs::create_dir_all(&directory).unwrap();
+        fs::set_permissions(&directory, fs::Permissions::from_mode(0o775)).unwrap();
+        let other = directory.join("other.desktop");
+        fs::write(&other, "[Desktop Entry]\nName=other\n").unwrap();
+        autostart.set(false, executable).unwrap();
+        assert!(other.exists());
+
+        // An entry this application wrote is still not touched while the
+        // directory grants group write access.
+        fs::set_permissions(&directory, fs::Permissions::from_mode(0o700)).unwrap();
+        autostart.set(true, executable).unwrap();
+        fs::set_permissions(&directory, fs::Permissions::from_mode(0o775)).unwrap();
+        assert_eq!(autostart.set(false, executable), Err(Error::Autostart));
+        assert!(file.exists());
     }
 
     #[test]

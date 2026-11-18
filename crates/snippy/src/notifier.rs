@@ -4,10 +4,20 @@ use std::process::{Command, Stdio};
 
 /// Best-effort notification for a committed Save. Only fixed text is sent.
 pub fn save_succeeded(enabled: bool) {
+    notify(enabled, "Saved successfully.");
+}
+
+/// Best-effort notification for serving a stored item onto the clipboard.
+/// Only fixed text is sent.
+pub fn copied(enabled: bool) {
+    notify(enabled, "Copied to clipboard.");
+}
+
+fn notify(enabled: bool, body: &'static str) {
     if !enabled {
         return;
     }
-    let child = notification_command()
+    let child = notification_command(body)
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null())
@@ -20,14 +30,9 @@ pub fn save_succeeded(enabled: bool) {
     }
 }
 
-fn notification_command() -> Command {
+fn notification_command(body: &str) -> Command {
     let mut command = Command::new("notify-send");
-    command.args([
-        "--app-name=Snippy",
-        "--icon=snippy",
-        "Snippy",
-        "Saved successfully.",
-    ]);
+    command.args(["--app-name=Snippy", "--icon=snippy", "Snippy", body]);
     command
 }
 
@@ -35,20 +40,31 @@ fn notification_command() -> Command {
 mod tests {
     use super::*;
 
-    #[test]
-    fn notification_text_is_fixed_and_contains_no_clipboard_data() {
-        let command = notification_command();
-        let arguments: Vec<_> = command
+    fn arguments(body: &str) -> Vec<String> {
+        notification_command(body)
             .get_args()
             .map(|value| value.to_string_lossy().into_owned())
-            .collect();
+            .collect()
+    }
+
+    #[test]
+    fn notification_text_is_fixed_and_contains_no_clipboard_data() {
         assert_eq!(
-            arguments,
+            arguments("Saved successfully."),
             [
                 "--app-name=Snippy",
                 "--icon=snippy",
                 "Snippy",
                 "Saved successfully."
+            ]
+        );
+        assert_eq!(
+            arguments("Copied to clipboard."),
+            [
+                "--app-name=Snippy",
+                "--icon=snippy",
+                "Snippy",
+                "Copied to clipboard."
             ]
         );
     }

@@ -499,6 +499,46 @@ mod tests {
         assert_eq!(vault.limits().max_clip_bytes, 4096);
         assert_eq!(crate::settings::Store::at(settings).load().unwrap(), base);
     }
+    #[cfg(feature = "sqlcipher")]
+    #[test]
+    fn settings_apply_ignores_unrelated_autostart_directory_permissions() {
+        use snippy_core::config::AppConfig;
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().unwrap();
+        let mut vault = Vault::at(dir.path().join("vault"), CaptureLimits::default()).unwrap();
+        let pass = Passphrase::new("synthetic-settings-key".into()).unwrap();
+        vault.create(&pass, &pass).unwrap();
+        // A stock Ubuntu XDG autostart directory is group-writable (umask 002).
+        let autostart = dir.path().join("autostart");
+        std::fs::create_dir_all(&autostart).unwrap();
+        std::fs::set_permissions(&autostart, std::fs::Permissions::from_mode(0o775)).unwrap();
+        let base = AppConfig {
+            notifications: true,
+            ..AppConfig::default()
+        };
+        let settings = dir.path().join("config/snippy/settings.conf");
+        let done = execute(
+            &mut vault,
+            &AtomicU64::new(1),
+            Job::Work {
+                epoch: 1,
+                key: WorkKey::Config(1, 1),
+                work: Work::SetLimits {
+                    base: Box::new(base.clone()),
+                    runtime: Box::new(base.clone()),
+                    previous_autostart: false,
+                    settings: settings.clone(),
+                    autostart: autostart.join("snippy.desktop"),
+                    executable: "/nonexistent/snippy".into(),
+                },
+            },
+        );
+        assert!(matches!(
+            done.work,
+            Some((_, Ok(WorkResult::Configured { .. })))
+        ));
+        assert_eq!(crate::settings::Store::at(settings).load().unwrap(), base);
+    }
     #[test]
     fn dead_worker_is_a_storage_failure_not_a_retryable_busy() {
         let (jobs, receiver) = mpsc::sync_channel(1);

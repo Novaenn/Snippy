@@ -161,8 +161,9 @@ not written to the settings file.
 
 Autostart is off by default. Enabling it writes an entry with the current
 absolute executable path, so re-enable it after moving the binary. Optional
-notifications are off by default and use a content-free `notify-send` call when
-available; the GUI and CLI remain the fallback.
+notifications are off by default; when enabled they use content-free
+`notify-send` calls for successful saves and when a stored item is placed on the
+clipboard. The GUI and CLI remain the fallback.
 
 ## Security and privacy
 

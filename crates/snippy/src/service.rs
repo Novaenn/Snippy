@@ -514,6 +514,7 @@ impl Server {
                             {
                                 o.restore_focus(window);
                             }
+                            crate::notifier::copied(self.config.notifications);
                             Reply::State(self.control.state)
                         }
                         Err(error) => Reply::Error(error),
